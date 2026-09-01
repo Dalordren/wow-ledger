@@ -1,8 +1,9 @@
+from datetime import datetime, timedelta, timezone
+
 import httpx2
 from pydantic import BaseModel
-from datetime import datetime, timezone, timedelta
 
-from app.config import Settings, get_settings
+from app.config import Settings
 
 TOKEN_URL = "https://oauth.battle.net/token"
 TOKEN_PRICE_PATH = "/data/wow/token/index"
@@ -33,8 +34,11 @@ class TokenPrice(BaseModel):
 class BlizzardClient:
     """Talks to Blizzard. Nothing else in the app touches httpx2 directly."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self, settings: Settings, transport: httpx2.BaseTransport | None = None
+    ) -> None:
         self._settings = settings
+        self._transport = transport
         self._access_token: str | None = None
         self._token_expires_at: datetime | None = None
 
@@ -49,7 +53,9 @@ class BlizzardClient:
             self._settings.blizzard_client_id,
             self._settings.blizzard_client_secret.get_secret_value(),
         )
-        with httpx2.Client(timeout=DEFAULT_TIMEOUT) as client:
+        with httpx2.Client(
+            timeout=DEFAULT_TIMEOUT, transport=self._transport
+        ) as client:
             response = client.post(
                 TOKEN_URL,
                 data={"grant_type": "client_credentials"},
@@ -73,7 +79,9 @@ class BlizzardClient:
         headers = {
             "Authorization": f"Bearer {access_token}",
         }
-        with httpx2.Client(timeout=DEFAULT_TIMEOUT) as client:
+        with httpx2.Client(
+            timeout=DEFAULT_TIMEOUT, transport=self._transport
+        ) as client:
             response = client.get(
                 api_url,
                 params=params,
