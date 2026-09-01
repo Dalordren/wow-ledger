@@ -1,12 +1,12 @@
 import httpx2
 from pydantic import BaseModel
-from datetime import datetime, timezone
-
+from datetime import datetime, timezone, timedelta
 
 from app.config import Settings, get_settings
 
 TOKEN_URL = "https://oauth.battle.net/token"
 TOKEN_PRICE_PATH = "/data/wow/token/index"
+TOKEN_EXPIRY_MARGIN_SECONDS = 60
 DEFAULT_TIMEOUT = 10.0
 COPPER_PER_GOLD = 10_000
 
@@ -35,26 +35,35 @@ class BlizzardClient:
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._access_token: str | None = None
+        self._token_expires_at: datetime | None = None
 
     def get_access_token(self) -> str:
-        # Set up auth to be passed in client POST
+        if (
+            self._access_token is not None
+            and self._token_expires_at is not None
+            and self._token_expires_at > datetime.now(timezone.utc)
+        ):
+            return self._access_token
         auth = (
             self._settings.blizzard_client_id,
             self._settings.blizzard_client_secret.get_secret_value(),
         )
-        # Open client to route Post
         with httpx2.Client(timeout=DEFAULT_TIMEOUT) as client:
             response = client.post(
                 TOKEN_URL,
                 data={"grant_type": "client_credentials"},
                 auth=auth,
             )
-            # Raise status for any errors
             response.raise_for_status()
             # Parse access_token
             token = TokenResponse.model_validate(response.json())
-        # return token as string
-        return token.access_token
+        self._access_token = token.access_token
+        self._token_expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=token.expires_in - TOKEN_EXPIRY_MARGIN_SECONDS
+        )
+
+        return self._access_token
 
     def get_token_price(self) -> TokenPrice:
         access_token = self.get_access_token()
