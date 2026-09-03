@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     blizzard_client_id: str
     blizzard_client_secret: SecretStr
     blizzard_region: str = "us"
+    database_url: SecretStr
+    db_echo: bool = True
 
     @property
     def blizzard_api_base_url(self) -> str:
