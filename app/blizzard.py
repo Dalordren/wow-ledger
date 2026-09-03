@@ -28,7 +28,8 @@ class TokenPrice(BaseModel):
 
     @property
     def updated_at(self) -> datetime:
-        return datetime.fromtimestamp(self.last_updated_timestamp, tz=timezone.utc)
+        seconds = self.last_updated_timestamp / 1000
+        return datetime.fromtimestamp(seconds, tz=timezone.utc)
 
 
 class BlizzardClient:
