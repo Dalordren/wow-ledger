@@ -1,12 +1,19 @@
-from pydantic import BaseModel, Field
-from sqlalchemy import Integer, String, BigInteger, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
-from app.database import Base
 from datetime import datetime
+
+from sqlalchemy import BigInteger, DateTime, Integer, String, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
 
 
 class PriceSnapshot(Base):
     __tablename__ = "price_snapshots"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "region", "published_at", name="uq_price_snapshots_region_published_at"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     region: Mapped[str] = mapped_column(String(8), index=True)
