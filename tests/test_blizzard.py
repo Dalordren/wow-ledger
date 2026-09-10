@@ -3,9 +3,8 @@ import pytest
 from fastapi import status
 
 from app.blizzard import BlizzardClient, TokenPrice
-<<<<<<< HEAD
-=======
 from app.config import Settings
+from pydantic import SecretStr
 
 
 @pytest.fixture
@@ -25,7 +24,6 @@ def success_payload() -> dict[str, object]:
         "token_type": "test_token",
         "expires_in": 86400,
     }
->>>>>>> 61133a1 ( Test: add price snapshot repository tests)
 
 
 def test_get_access_token_returns_token_from_response(api_settings, success_payload):

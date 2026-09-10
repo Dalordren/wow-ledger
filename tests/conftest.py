@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-import pytest
-from fastapi.testclient import TestClient
-from pydantic import SecretStr
-
-from app.config import Settings
-=======
 import os
 
 import pytest
@@ -15,7 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from alembic import command
->>>>>>> 61133a1 ( Test: add price snapshot repository tests)
 from app.main import app
 
 load_dotenv()
@@ -52,21 +44,3 @@ def db_session(test_engine):
 def client():
     return TestClient(app)
 
-
-@pytest.fixture
-def api_settings() -> Settings:
-    return Settings(
-        blizzard_client_id="test",
-        blizzard_client_secret=SecretStr("test"),
-        blizzard_region="fr",
-        database_url=SecretStr(""),
-    )
-
-
-@pytest.fixture
-def success_payload() -> dict[str, object]:
-    return {
-        "access_token": "mock_token",
-        "token_type": "test_token",
-        "expires_in": 86400,
-    }
