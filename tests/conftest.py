@@ -43,4 +43,3 @@ def db_session(test_engine):
 @pytest.fixture
 def client():
     return TestClient(app)
-

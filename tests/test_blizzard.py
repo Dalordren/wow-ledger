@@ -1,10 +1,10 @@
 import httpx2
 import pytest
 from fastapi import status
+from pydantic import SecretStr
 
 from app.blizzard import BlizzardClient, TokenPrice
 from app.config import Settings
-from pydantic import SecretStr
 
 
 @pytest.fixture
