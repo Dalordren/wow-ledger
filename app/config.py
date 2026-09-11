@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     blizzard_region: str = "us"
     database_url: SecretStr
     db_echo: bool = True
+    poll_interval_seconds: int = 1200
 
     @property
     def blizzard_api_base_url(self) -> str:

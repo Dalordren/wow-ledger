@@ -9,7 +9,7 @@ settings = get_settings()
 DATABASE_URL = settings.database_url.get_secret_value()
 
 engine = create_engine(DATABASE_URL, echo=settings.db_echo, pool_pre_ping=True)
-SessionLocal = sessionmaker(autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autoflush=False, bind=engine, expire_on_commit=False)
 
 convention = {
     "ix": "ix_%(column_0_label)s",
