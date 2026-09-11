@@ -4,12 +4,12 @@ import httpx2
 from pydantic import BaseModel
 
 from app.config import Settings
+from app.units import copper_to_gold
 
 TOKEN_URL = "https://oauth.battle.net/token"
 TOKEN_PRICE_PATH = "/data/wow/token/index"
 TOKEN_EXPIRY_MARGIN_SECONDS = 60
 DEFAULT_TIMEOUT = 10.0
-COPPER_PER_GOLD = 10_000
 
 
 class TokenResponse(BaseModel):
@@ -24,7 +24,7 @@ class TokenPrice(BaseModel):
 
     @property
     def gold(self) -> int:
-        return self.price // COPPER_PER_GOLD
+        return copper_to_gold(self.price)
 
     @property
     def updated_at(self) -> datetime:

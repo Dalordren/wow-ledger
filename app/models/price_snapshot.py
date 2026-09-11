@@ -4,6 +4,7 @@ from sqlalchemy import BigInteger, DateTime, Integer, String, UniqueConstraint, 
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.units import copper_to_gold
 
 
 class PriceSnapshot(Base):
@@ -22,6 +23,10 @@ class PriceSnapshot(Base):
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+    @property
+    def gold(self) -> int:
+        return copper_to_gold(self.price_copper)
 
     def __repr__(self) -> str:
         return (
