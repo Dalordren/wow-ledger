@@ -1,10 +1,11 @@
 import time
+from collections.abc import Callable
+from typing import Protocol
 
 import httpx2
 from sqlalchemy.orm import Session
-from collections.abc import Callable
 
-from app.blizzard import BlizzardClient
+from app.blizzard import BlizzardClient, TokenPrice
 from app.config import get_settings
 from app.database import SessionLocal
 from app.models import PriceSnapshot
@@ -13,6 +14,10 @@ from app.repository import record_price
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 MAX_ATTEMPTS = 3
 BACKOFF_BASE_SECONDS = 2
+
+
+class PriceSource(Protocol):
+    def get_token_price(self) -> TokenPrice: ...
 
 
 def is_retryable(error: Exception) -> bool:
@@ -24,7 +29,7 @@ def is_retryable(error: Exception) -> bool:
 
 
 def poll_once(
-    client: BlizzardClient, session: Session, region: str
+    client: PriceSource, session: Session, region: str
 ) -> PriceSnapshot | None:
     wow_token = client.get_token_price()
     token_price = wow_token.price
@@ -35,7 +40,7 @@ def poll_once(
 
 
 def poll_with_retry(
-    client: BlizzardClient, session_factory: Callable[[], Session], region: str
+    client: PriceSource, session_factory: Callable[[], Session], region: str
 ) -> PriceSnapshot | None:
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
@@ -43,12 +48,11 @@ def poll_with_retry(
                 return poll_once(client, session, region)
         except Exception as error:
             if not is_retryable(error) or attempt == MAX_ATTEMPTS:
-                if attempt >= MAX_ATTEMPTS:
-                    raise RuntimeError("Max attempts has been exceeded")
-                raise RuntimeError(f"System encountered a {error}")
+                raise
             delay = BACKOFF_BASE_SECONDS**attempt
             print(f"attempt {attempt} failed({error}); Retrying in {delay}s")
             time.sleep(delay)
+    raise RuntimeError("Retry exited without returning or raising")
 
 
 def main() -> None:

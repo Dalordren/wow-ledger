@@ -1,29 +1,8 @@
 import httpx2
 import pytest
 from fastapi import status
-from pydantic import SecretStr
 
 from app.blizzard import BlizzardClient, TokenPrice
-from app.config import Settings
-
-
-@pytest.fixture
-def api_settings() -> Settings:
-    return Settings(
-        blizzard_client_id="test",
-        blizzard_client_secret=SecretStr("test"),
-        blizzard_region="fr",
-        database_url=SecretStr(""),
-    )
-
-
-@pytest.fixture
-def success_payload() -> dict[str, object]:
-    return {
-        "access_token": "mock_token",
-        "token_type": "test_token",
-        "expires_in": 86400,
-    }
 
 
 def test_get_access_token_returns_token_from_response(api_settings, success_payload):

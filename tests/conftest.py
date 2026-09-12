@@ -4,10 +4,12 @@ import pytest
 from alembic.config import Config
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from alembic import command
+from app.config import Settings
 from app.main import app
 
 load_dotenv()
@@ -43,3 +45,27 @@ def db_session(test_engine):
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+@pytest.fixture
+def api_settings() -> Settings:
+    return Settings(
+        blizzard_client_id="test",
+        blizzard_client_secret=SecretStr("test"),
+        blizzard_region="fr",
+        database_url=SecretStr(""),
+    )
+
+
+@pytest.fixture
+def success_payload() -> dict[str, object]:
+    return {
+        "access_token": "mock_token",
+        "token_type": "test_token",
+        "expires_in": 86400,
+    }
+
+
+@pytest.fixture
+def price_payload() -> dict[str, object]:
+    return {"price": 50000, "last_updated_timestamp": 1788347472000}
