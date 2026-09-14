@@ -1,3 +1,4 @@
 from app.models.price_snapshot import PriceSnapshot
+from app.models.user import User
 
-__all__ = ["PriceSnapshot"]
+__all__ = ["PriceSnapshot", "User"]
