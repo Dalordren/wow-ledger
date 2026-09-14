@@ -1,6 +1,5 @@
-from contextlib import nullcontext
 import time  # The standard module (has .sleep)
-from datetime import time as dt_time
+from contextlib import nullcontext
 from datetime import UTC, datetime
 
 import httpx2
