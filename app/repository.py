@@ -1,9 +1,12 @@
 from datetime import datetime
 
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import PriceSnapshot
+from app.errors import EmailAlreadyRegistered
+from app.models import PriceSnapshot, User
 
 
 def record_price(
@@ -20,3 +23,19 @@ def record_price(
         .returning(PriceSnapshot)
     )
     return session.execute(statement).scalars().one_or_none()
+
+
+def get_user_by_email(session: Session, email: str) -> User | None:
+    statement = select(User).where(User.email == email)
+    return session.execute(statement).scalar_one_or_none()
+
+
+def create_user(session: Session, email: str, hashed_password: str) -> User:
+    new_user = User(email=email, hashed_password=hashed_password)
+    try:
+        session.add(new_user)
+        session.flush()
+    except IntegrityError as error:
+        session.rollback()
+        raise EmailAlreadyRegistered() from error
+    return new_user
