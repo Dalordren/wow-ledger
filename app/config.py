@@ -15,8 +15,10 @@ class Settings(BaseSettings):
     blizzard_client_secret: SecretStr
     blizzard_region: str = "us"
     database_url: SecretStr
-    db_echo: bool = True
+    db_echo: bool = False
     poll_interval_seconds: int = 1200
+    jwt_secret_key: SecretStr
+    access_token_expiry_minutes: int = 30
 
     @property
     def blizzard_api_base_url(self) -> str:

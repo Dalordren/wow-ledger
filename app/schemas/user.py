@@ -17,3 +17,12 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     email: EmailStr
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+def normalize_email(value: str) -> str:
+    return value.strip().lower()
