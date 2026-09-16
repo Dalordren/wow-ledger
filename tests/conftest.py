@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from alembic import command
 from app.config import Settings
+from app.database import get_db
 from app.main import app
 
 load_dotenv()
@@ -54,6 +55,9 @@ def api_settings() -> Settings:
         blizzard_client_secret=SecretStr("test"),
         blizzard_region="fr",
         database_url=SecretStr(""),
+        db_echo=False,
+        jwt_secret_key=SecretStr(""),
+        access_token_expiry_minutes=30,
     )
 
 
@@ -69,3 +73,13 @@ def success_payload() -> dict[str, object]:
 @pytest.fixture
 def price_payload() -> dict[str, object]:
     return {"price": 50000, "last_updated_timestamp": 1788347472000}
+
+
+@pytest.fixture
+def api_client(db_session):
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
