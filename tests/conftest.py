@@ -3,6 +3,7 @@ import os
 import pytest
 from alembic.config import Config
 from dotenv import load_dotenv
+from fastapi import status
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 from sqlalchemy import create_engine

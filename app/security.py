@@ -46,7 +46,11 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, secret_key, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(
+            token,
+            secret_key,
+            algorithms=[JWT_ALGORITHM],
+        )
     except jwt.InvalidTokenError:
         raise credentials_error from None
     user = session.get(User, int(payload["sub"]))
