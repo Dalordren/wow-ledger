@@ -33,9 +33,9 @@ def get_user_by_email(session: Session, email: str) -> User | None:
 def create_user(session: Session, email: str, hashed_password: str) -> User:
     new_user = User(email=email, hashed_password=hashed_password)
     try:
-        session.add(new_user)
-        session.flush()
+        with session.begin_nested():
+            session.add(new_user)
+            session.flush()
     except IntegrityError as error:
-        session.rollback()
         raise EmailAlreadyRegistered() from error
     return new_user

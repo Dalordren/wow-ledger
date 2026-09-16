@@ -8,7 +8,7 @@ from app.database import get_db
 from app.errors import EmailAlreadyRegistered
 from app.models import User
 from app.repository import create_user, get_user_by_email
-from app.schemas.user import UserCreate, UserRead, normalize_email, Token
+from app.schemas.user import Token, UserCreate, UserRead, normalize_email
 from app.security import (
     create_access_token,
     get_current_user,
