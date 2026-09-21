@@ -1,5 +1,5 @@
-from fastapi import status
 import pytest
+from fastapi import status
 
 
 def test_register_user_returns_created(api_client):
@@ -104,7 +104,7 @@ def test_me_requires_authentication(api_client):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-def test_me_with_tampered_token(api_client, auth_header):
+def test_me_with_malformed_token(api_client, auth_header):
     valid_token = auth_header["Authorization"].removeprefix("Bearer ")
     header, payload, signature = valid_token.split(".")
     tampered_token = f"{header}.{payload}.{signature[:-4]}AAAA"
@@ -114,11 +114,3 @@ def test_me_with_tampered_token(api_client, auth_header):
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()["detail"] == "Could not validate credentials."
-
-
-def test_me_with_malformed_token(api_client):
-    tampered = "fadkfjfkKJKJFGSAKGJWEGSDF"
-    response = api_client.get(
-        "/users/me",
-        headers={"Authorization": f"Bearer {tampered}"},
-    )
