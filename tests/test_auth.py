@@ -1,6 +1,9 @@
 import pytest
 from fastapi import status
 
+from app.routers import auth as auth_patch
+from app.security import create_access_token
+
 
 def test_register_user_returns_created(api_client):
     response = api_client.post(
@@ -104,7 +107,7 @@ def test_me_requires_authentication(api_client):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-def test_me_with_malformed_token(api_client, auth_header):
+def test_me_with_tampered_token(api_client, auth_header):
     valid_token = auth_header["Authorization"].removeprefix("Bearer ")
     header, payload, signature = valid_token.split(".")
     tampered_token = f"{header}.{payload}.{signature[:-4]}AAAA"
@@ -113,4 +116,55 @@ def test_me_with_malformed_token(api_client, auth_header):
         headers={"Authorization": f"Bearer {tampered_token}"},
     )
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
-    assert response.json()["detail"] == "Could not validate credentials."
+    assert response.json()["detail"] == "Invalid token."
+
+
+def test_me_with_malformed_token(api_client):
+    tampered = "fadkfjfkKJKJFGSAKGJWEGSDF"
+    response = api_client.get(
+        "/users/me",
+        headers={"Authorization": f"Bearer {tampered}"},
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json()["detail"] == "Invalid token."
+
+
+def test_verify_password_gets_called_per_request(
+    api_client, registered_user, monkeypatch
+):
+    function_calls = []
+    verify_password = auth_patch.verify_password
+
+    def record_function_calls(password, hashed):
+        function_calls.append(hashed)
+        return verify_password(password, hashed)
+
+    monkeypatch.setattr(auth_patch, "verify_password", record_function_calls)
+
+    first_response = api_client.post(
+        "/token",
+        data={"username": "notregistered@example.com", "password": "notarealpassword"},
+    )
+    second_response = api_client.post(
+        "/token",
+        data={"username": registered_user["email"], "password": "notarealpassword"},
+    )
+
+    assert first_response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert second_response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert function_calls[0] == auth_patch.DUMMY_HASHED_PASSWORD
+    assert function_calls[1] != auth_patch.DUMMY_HASHED_PASSWORD
+    assert len(function_calls) == 2
+
+
+def test_me_with_invalid_sub(api_client):
+    fake_token = create_access_token("test")
+
+    response = api_client.get(
+        "/users/me",
+        headers={"Authorization": f"Bearer {fake_token}"},
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json()["detail"] == "Invalid token."
