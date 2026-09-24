@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -5,6 +6,8 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
+from pydantic import BaseModel, ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -13,6 +16,7 @@ from app.models.user import User
 
 settings = get_settings()
 JWT_ALGORITHM = "HS256"
+INVALID_TOKEN = "Invalid token."
 password_hasher = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 secret_key = settings.jwt_secret_key.get_secret_value()
@@ -22,6 +26,9 @@ TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
 def hash_password(password: str) -> str:
     return password_hasher.hash(password)
+
+
+DUMMY_HASHED_PASSWORD = hash_password(secrets.token_urlsafe(32))
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -36,13 +43,17 @@ def create_access_token(subject: str) -> str:
     return jwt.encode(payload, secret_key, algorithm=JWT_ALGORITHM)
 
 
+class PayloadSub(BaseModel):
+    sub: int
+
+
 def get_current_user(
     token: TokenDep,
     session: DbDep,
 ) -> User:
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials.",
+        detail=INVALID_TOKEN,
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
@@ -53,7 +64,12 @@ def get_current_user(
         )
     except jwt.InvalidTokenError:
         raise credentials_error from None
-    user = session.get(User, int(payload["sub"]))
+    try:
+        user_id = PayloadSub(**payload).sub
+    except ValidationError:
+        raise credentials_error from None
+    user = session.get(User, user_id)
+
     if user is None:
         raise credentials_error
 
