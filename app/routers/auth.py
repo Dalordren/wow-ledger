@@ -10,12 +10,14 @@ from app.models import User
 from app.repository import create_user, get_user_by_email
 from app.schemas.user import Token, UserCreate, UserRead, normalize_email
 from app.security import (
+    DUMMY_HASHED_PASSWORD,
     create_access_token,
     get_current_user,
     hash_password,
     verify_password,
 )
 
+CREDENTIALS_ERROR_DETAIL = "Could not validate credentials."
 DbDep = Annotated[Session, Depends(get_db)]
 Oauth2Dep = Annotated[OAuth2PasswordRequestForm, Depends()]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
@@ -46,10 +48,13 @@ def register_user(user: UserCreate, session: DbDep) -> User:
 def login(form_data: Oauth2Dep, session: DbDep) -> Token:
     clean_email = normalize_email(form_data.username)
     user = get_user_by_email(session, clean_email)
-    if user is None or not verify_password(form_data.password, user.hashed_password):
+    hashed_password = user.hashed_password if user else DUMMY_HASHED_PASSWORD
+    is_password_ok = verify_password(form_data.password, hashed_password)
+
+    if user is None or not is_password_ok:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials.",
+            detail=CREDENTIALS_ERROR_DETAIL,
             headers={"WWW-Authenticate": "Bearer"},
         )
     token = create_access_token(subject=str(user.id))
