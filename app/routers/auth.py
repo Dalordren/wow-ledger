@@ -20,9 +20,8 @@ from app.security import (
 CREDENTIALS_ERROR_DETAIL = "Could not validate credentials."
 DbDep = Annotated[Session, Depends(get_db)]
 Oauth2Dep = Annotated[OAuth2PasswordRequestForm, Depends()]
-CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post(
@@ -59,8 +58,3 @@ def login(form_data: Oauth2Dep, session: DbDep) -> Token:
         )
     token = create_access_token(subject=str(user.id))
     return Token(access_token=token)
-
-
-@router.get("/users/me", response_model=UserRead)
-def read_me(current_user: CurrentUserDep):
-    return current_user

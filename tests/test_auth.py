@@ -7,7 +7,7 @@ from app.security import create_access_token
 
 def test_register_user_returns_created(api_client):
     response = api_client.post(
-        "/register", json={"email": "test@example.com", "password": "1234567890"}
+        "/auth/register", json={"email": "test@example.com", "password": "1234567890"}
     )
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -19,10 +19,10 @@ def test_register_user_returns_created(api_client):
 
 def test_duplicate_user_is_rejected(api_client):
     payload = {"email": "test2@example.com", "password": "1234567890"}
-    first = api_client.post("/register", json=payload)
+    first = api_client.post("/auth/register", json=payload)
     assert first.status_code == status.HTTP_201_CREATED
 
-    second = api_client.post("/register", json=payload)
+    second = api_client.post("/auth/register", json=payload)
     assert second.status_code == status.HTTP_409_CONFLICT
 
 
@@ -35,14 +35,14 @@ def test_duplicate_user_is_rejected(api_client):
     ],
 )
 def test_invalid_registration_is_rejected(api_client, test_payload):
-    response = api_client.post("/register", json=test_payload)
+    response = api_client.post("/auth/register", json=test_payload)
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 @pytest.fixture
 def registered_user(api_client):
     credentials = {"email": "registered@example.com", "password": "registeredpassword"}
-    response = api_client.post("/register", json=credentials)
+    response = api_client.post("/auth/register", json=credentials)
     assert response.status_code == status.HTTP_201_CREATED
     return credentials
 
@@ -50,7 +50,7 @@ def registered_user(api_client):
 @pytest.fixture
 def auth_header(api_client, registered_user):
     response = api_client.post(
-        "/token",
+        "/auth/token",
         data={
             "username": registered_user["email"],
             "password": registered_user["password"],
@@ -62,7 +62,7 @@ def auth_header(api_client, registered_user):
 
 def test_login_returns_token(api_client, registered_user):
     response = api_client.post(
-        "/token",
+        "/auth/token",
         data={
             "username": registered_user["email"],
             "password": registered_user["password"],
@@ -76,14 +76,14 @@ def test_login_returns_token(api_client, registered_user):
 
 def test_login_failures_are_indistinguishable(api_client, registered_user):
     unknown_email = api_client.post(
-        "/token",
+        "/auth/token",
         data={
             "username": "thisisnotemail@example.com",
             "password": registered_user["password"],
         },
     )
     wrong_password = api_client.post(
-        "/token",
+        "/auth/token",
         data={
             "username": registered_user["email"],
             "password": "notthesamepassword",
@@ -143,11 +143,11 @@ def test_verify_password_gets_called_per_request(
     monkeypatch.setattr(auth_patch, "verify_password", record_function_calls)
 
     first_response = api_client.post(
-        "/token",
+        "/auth/token",
         data={"username": "notregistered@example.com", "password": "notarealpassword"},
     )
     second_response = api_client.post(
-        "/token",
+        "/auth/token",
         data={"username": registered_user["email"], "password": "notarealpassword"},
     )
 

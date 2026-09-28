@@ -18,7 +18,7 @@ settings = get_settings()
 JWT_ALGORITHM = "HS256"
 INVALID_TOKEN = "Invalid token."
 password_hasher = PasswordHash.recommended()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 secret_key = settings.jwt_secret_key.get_secret_value()
 DbDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
